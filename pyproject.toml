@@ -1,0 +1,80 @@
+[project]
+name = "tripeta"
+version = "0.1.0"
+description = "Booking-time trip duration prediction on NYC TLC data"
+requires-python = "==3.14.*"
+
+# Runtime dependencies only: this exact set is what the production serving image installs.
+# Anything needed solely for training, analysis or explanation belongs in a dependency group below.
+dependencies = [
+    "polars==1.44.2",
+    "pyarrow==25.0.1",
+    "lightgbm==4.7.0",
+    "holidays==0.105",
+    "fastapi==0.142.2",
+    "pydantic==2.13.5",
+    "uvicorn==0.54.0",
+]
+
+[dependency-groups]
+# Training / analysis: heavy, never shipped to production.
+train = [
+    "pandas==3.0.6",
+    "scikit-learn==1.9.1",
+    "shap==0.52.0",
+    "mlflow==3.16.1",
+    "geopandas==1.2.0",
+    "pyogrio==0.13.0",
+    "shapely==2.1.2",
+    "matplotlib==3.11.2",
+]
+dev = [
+    "pytest==9.1.1",
+    "httpx2==2.13.1",
+    "ruff==0.16.9",
+    "jupyterlab==4.6.4",
+    "ipykernel==7.4.0",
+]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tripeta"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+src = ["src", "."]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # import sorting
+    "UP",       # pyupgrade
+    "B",        # bugbear
+    "ANN",      # require type annotations
+    "D",        # docstrings
+    "SIM",      # simplify
+    "PD",       # pandas-vet
+    "NPY",      # numpy rules
+    "RUF",
+]
+ignore = [
+    "D203",  # conflicts with D211
+    "D213",  # conflicts with D212
+    "ANN401",  # Any is sometimes the honest type
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "ANN"]
+"notebooks/**" = ["D", "ANN", "E402"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"

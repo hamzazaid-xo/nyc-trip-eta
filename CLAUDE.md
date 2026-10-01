@@ -83,8 +83,9 @@ Makefile            the only interface Hamza types
 ```
 
 - **base** — `python:3.14.7-slim-trixie`, with `uv` copied in from the official uv image
-  (`COPY --from=ghcr.io/astral-sh/uv:0.12.21 /uv /uvx /bin/`). No compilers needed: every pinned
-  dependency has a Python 3.14 wheel (verified, see Stack).
+  (`COPY --from=ghcr.io/astral-sh/uv:0.12.21 /uv /uvx /bin/`), plus the one system package the stack
+  genuinely needs: **`libgomp1`**, because LightGBM's wheel dynamically links the system OpenMP
+  runtime. No compilers needed: every pinned dependency has a Python 3.14 wheel (verified, see Stack).
 - **deps** — `uv sync --frozen` from `pyproject.toml` + `uv.lock`. Cached layer, so editing source
   never reinstalls packages.
 - **dev** — adds dev dependencies (pytest, ruff, jupyterlab). Repo bind-mounted at `/app`, so edits
@@ -138,7 +139,7 @@ make down         # stop everything
 | pydantic | 2.13.5 | request/response validation |
 | uvicorn | 0.54.0 | ASGI server |
 | pytest | 9.1.1 | tests |
-| httpx | 0.28.1 | API tests against the FastAPI app |
+| httpx2 | 2.13.1 | API tests against the FastAPI app (starlette's TestClient requires the 2.x line; httpx 0.28 is deprecated there) |
 | ruff | 0.16.9 | lint + format |
 | geopandas | 1.2.0 | read the taxi zone shapefile once, compute zone centroids |
 | pyogrio | 0.13.0 | geopandas' shapefile reader (no GDAL system install needed) |

@@ -1,0 +1,69 @@
+# Every command in this project runs in one of these services.
+# Nothing is ever installed on the host.
+
+x-dev-image: &dev-image
+  build:
+    context: .
+    target: dev
+  image: tripeta-dev:latest
+
+services:
+  # Interactive shell, data prep, training, evaluation. Source is bind-mounted,
+  # so host edits are live inside the container.
+  dev:
+    <<: *dev-image
+    volumes:
+      - .:/app
+    environment:
+      MLFLOW_TRACKING_URI: file:///app/mlruns
+      PYTHONPATH: /app/src:/app
+    working_dir: /app
+
+  # JupyterLab for the Phase 2 EDA notebook.
+  notebook:
+    <<: *dev-image
+    volumes:
+      - .:/app
+    environment:
+      MLFLOW_TRACKING_URI: file:///app/mlruns
+      PYTHONPATH: /app/src:/app
+    working_dir: /app
+    ports:
+      - "8888:8888"
+    command: >
+      jupyter lab --ip=0.0.0.0 --port=8888 --no-browser
+      --allow-root --IdentityProvider.token=''
+      --ServerApp.root_dir=/app
+
+  # MLflow tracking UI, file-backed in ./mlruns (gitignored).
+  mlflow:
+    <<: *dev-image
+    volumes:
+      - ./mlruns:/app/mlruns
+    ports:
+      - "5000:5000"
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri file:///app/mlruns
+      --default-artifact-root file:///app/mlruns
+
+  # The production image. No source mount: what runs here is what would ship.
+  # models/ is mounted read-only until Phase 6 decides how the model gets baked in.
+  api:
+    build:
+      context: .
+      target: runtime
+    image: tripeta-api:latest
+    volumes:
+      - ./models:/app/models:ro
+    ports:
+      - "8000:8000"
+
+  # Test runner. Source is mounted (fast iteration); Phase 7 adds the CI job
+  # that builds an image with the source baked in, for true build-artifact parity.
+  test:
+    <<: *dev-image
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: ["pytest"]

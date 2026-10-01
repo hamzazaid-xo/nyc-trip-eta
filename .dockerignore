@@ -1,0 +1,15 @@
+# keep the build context tiny: data is ~300 MB and must never enter an image layer
+data/
+models/
+mlruns/
+reports/
+notebooks/*.ipynb
+
+.git/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.DS_Store
